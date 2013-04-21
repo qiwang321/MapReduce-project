@@ -13,7 +13,7 @@
  * implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-package model;
+// package model;
 
 
 import java.io.ByteArrayInputStream;
@@ -39,7 +39,7 @@ public class ModelNode implements Writable {
 
 	private ArrayListOfFloatsWritable[] weights = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
   private ArrayListOfFloatsWritable[] bv = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
-	private ArrayListOfFloatsWritable[] bh = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];;
+	private ArrayListOfFloatsWritable[] bh = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
 	
 	public ModelNode() {
 	}

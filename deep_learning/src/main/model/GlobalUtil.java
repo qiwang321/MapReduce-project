@@ -1,4 +1,4 @@
-package model;
+// package model;
 import java.lang.Math;
 import java.util.Random;
 
@@ -10,6 +10,10 @@ public class GlobalUtil{
     public static final int[] train_len = {5923, 6742, 5958, 6131, 5842, 5421, 5918, 6265, 5851, 5949}; 
     public static final int[] test_len = {980, 1135, 1032, 1010, 982, 892, 958, 1028, 974, 1009};
     public static final int[] nodes_layer = {GlobalUtil.NODES_INPUT, 1000, 500, 250, 2};
+    
+    // super layer parameters
+    public static final int SUPER_NUM = 3; // num of layers for super model
+    public static final int[] super_layer = {0, 20, 5, 2}; // nodes of each layer in the super model
 
     
 

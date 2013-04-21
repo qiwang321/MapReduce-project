@@ -1,4 +1,4 @@
-package model;
+// package model;
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.channels.GatheringByteChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.StringTokenizer;
@@ -44,6 +45,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -65,8 +67,8 @@ import edu.umd.cloud9.io.pair.PairOfStrings;
 public class AutoCoder extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(AutoCoder.class);
   
-  protected static class MyMapper extends Mapper<LongWritable, Text, Text, ModelNode> {
-    private static final Text comp = new Text();
+  protected static class MyMapper extends Mapper<LongWritable, Text, IntWritable, ModelNode> {
+    private static final IntWritable comp = new IntWritable();
     private static final ModelNode model = new ModelNode();    
     private static int num_train_data = 0;
     
@@ -102,9 +104,9 @@ public class AutoCoder extends Configured implements Tool {
   
     public void setup(Context context) throws IOException{
       // load the information of k clusters 
-      String file = context.getConfiguration().get("sidepath");
-      FSDataInputStream cluster=FileSystem.get(context.getConfiguration()).open(new Path(file));
-      BufferedReader reader = new BufferedReader(new InputStreamReader(cluster));
+      //String file = context.getConfiguration().get("sidepath");
+      //FSDataInputStream cluster=FileSystem.get(context.getConfiguration()).open(new Path(file));
+      //BufferedReader reader = new BufferedReader(new InputStreamReader(cluster));
        
       
       // Initialize the  memory for MCMC samples
@@ -128,19 +130,19 @@ public class AutoCoder extends Configured implements Tool {
       
       for (int k = 1; k < GlobalUtil.NUM_LAYER + 1; k++) 
         for (int j = 0; j < GlobalUtil.nodes_layer[k-1] * GlobalUtil.nodes_layer[k]; j++)
-          weights[k][j]=read_float(reader);
+          weights[k][j] = (float) (0.1 * rd.nextGaussian());
       
       
       for (int k = 1; k < GlobalUtil.NUM_LAYER + 1; k++) 
         for (int j = 0; j < GlobalUtil.nodes_layer[k-1]; j++)
-           bv[k][j]=read_float(reader);
+           bv[k][j] = 0.0f;
       
       for (int k = 1; k < GlobalUtil.NUM_LAYER + 1; k++)         
         for (int j = 0; j < GlobalUtil.nodes_layer[k]; j++)
-           bh[k][j]=read_float(reader);
+           bh[k][j] = 0.0f;
        
-      reader.close();
-      cluster.close();
+      //reader.close();
+      //cluster.close();
       
       num_train_data = 0;
     }
@@ -171,7 +173,7 @@ public class AutoCoder extends Configured implements Tool {
     }
     
     public void cleanup(Context context) throws IOException, InterruptedException {
-        comp.set(String.valueOf(num_train_data));
+        comp.set(num_train_data);
   
         ArrayListOfFloatsWritable[] W = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
         ArrayListOfFloatsWritable[] BV = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
@@ -293,9 +295,9 @@ public class AutoCoder extends Configured implements Tool {
 
 
   protected static class MyReducer extends
-      Reducer<Text, ModelNode, Text, ModelNode> {
+      Reducer<Text, ModelNode, Text, SuperModel> {
     private static final Text result = new Text();
-    private static final ModelNode model = new ModelNode();    
+    private static ArrayList<ModelNode> modelSet = new ArrayList<ModelNode>();     
         
     private static final Random rd = new Random();  
     private static float[][] weights = new float[GlobalUtil.NUM_LAYER+1][]; //space storing the updating weights (first is not used)
@@ -312,6 +314,7 @@ public class AutoCoder extends Configured implements Tool {
     yita_wt = GlobalUtil.yita_wt, yita_bvt = GlobalUtil.yita_bvt, yita_bht = GlobalUtil.yita_bht; // learning rates
     private static float mu = GlobalUtil.mu, reg = GlobalUtil.reg;
     private static int layer_ind=0;
+    String dataPath;
     
     private static int count = 0;
     
@@ -319,32 +322,42 @@ public class AutoCoder extends Configured implements Tool {
       // load the information of k clusters 
       layer_ind = context.getConfiguration().getInt("layer_ind", 0);
           
-          // Initialize the  memory for weight parameters
+      // Initialize the  memory for weight parameters
       for (int k = 1; k < GlobalUtil.NUM_LAYER + 1; k++) {
             weights[k] = new float[GlobalUtil.nodes_layer[k-1] * GlobalUtil.nodes_layer[k]];
             bv[k] = new float[GlobalUtil.nodes_layer[k-1]];
             bh[k] = new float[GlobalUtil.nodes_layer[k]];
       }
       count = 0;
+      dataPath = context.getConfiguration().get("dataPath");
      }
     
+/*    
     public void cleanup(Context context) throws IOException, InterruptedException {
       result.set("result");
       context.write(result, model);
   }
-
+*/
     
     
     @Override
     public void reduce(Text key, Iterable<ModelNode> values, Context context)
         throws IOException, InterruptedException {  
       Iterator<ModelNode> iter = values.iterator();
-  
+     
+  // combine
       while (iter.hasNext()){
           ModelNode now = iter.next();
-          combine(model,now);
+          //combine(model,now);
+          modelSet.add(now);
       }
+          SuperModel consensus = new SuperModel(modelSet);
+   // train
+          consensus.train(dataPath);
+          
+          context.write(NullWritable.get(), consensus);
     }
+    
     
     void combine(ModelNode model, ModelNode now) {
        if (count==0) {
