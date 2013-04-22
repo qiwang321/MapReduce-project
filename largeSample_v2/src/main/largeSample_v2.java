@@ -60,11 +60,10 @@ public class largeSample_v2 extends Configured implements Tool {
     	if (value.toString().length() == 0) return;
 	if (rg.nextFloat() > (float)km/n) return;
  
-	int t = rg.next() % m;
-    	int sec = rg.next();
+	int t = rg.next(32) % m;
+    	int sec = rg.next(32);
     	  TARGET.set(t, sec);
-    	  for (int j = 0; j < t; j++) 
-    		  context.write(TARGET, value);
+    	context.write(TARGET, value);
     }
   }
 
