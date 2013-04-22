@@ -33,8 +33,8 @@ import cern.colt.Arrays;
 
 import org.uncommons.maths.random.PoissonGenerator;
 
-public class largeSample extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(largeSample.class);
+public class largeSample_v2 extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(largeSample_v2.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
   private static class MyMapper extends Mapper<LongWritable, Text, PairOfInts, Text> {
@@ -84,7 +84,7 @@ public class largeSample extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public largeSample() {}
+  public largeSample_v2() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
@@ -137,7 +137,7 @@ public class largeSample extends Configured implements Tool {
     int reduceTasks = cmdline.hasOption(NUM_PARTITIONS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_PARTITIONS)) : 1; // default: put all data into one partition
 
-    LOG.info("Tool: " + largeSample.class.getSimpleName());
+    LOG.info("Tool: " + largeSample_v2.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
     LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of partitions: " + reduceTasks);
@@ -149,8 +149,8 @@ public class largeSample extends Configured implements Tool {
     conf.setInt("N", Integer.parseInt(n)); // total number of records
     conf.setInt("M", reduceTasks); // total number of partitions
     Job job = Job.getInstance(conf);
-    job.setJobName(largeSample.class.getSimpleName());
-    job.setJarByClass(largeSample.class);
+    job.setJobName(largeSample_v2.class.getSimpleName());
+    job.setJarByClass(largeSample_v2.class);
 
     job.setNumReduceTasks(reduceTasks);
 
@@ -181,6 +181,6 @@ public class largeSample extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new largeSample(), args);
+    ToolRunner.run(new largeSample_v2(), args);
   }
 }
