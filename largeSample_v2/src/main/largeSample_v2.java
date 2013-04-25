@@ -162,6 +162,7 @@ public class largeSample_v2 extends Configured implements Tool {
 
     FileInputFormat.setInputPaths(job, new Path(inputPath));
     FileOutputFormat.setOutputPath(job, new Path(outputPath));
+    FileInputFormat.setMinInputSplitSize(job, 660*1024*1024);
 
     job.setMapOutputKeyClass(PairOfInts.class);
     job.setMapOutputValueClass(Text.class);
