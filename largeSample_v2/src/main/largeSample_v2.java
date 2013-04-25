@@ -57,7 +57,7 @@ public class largeSample_v2 extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-
+    	if(value.getLength() == 0) return;
 	int rem = km;
 	for (int i = 0; i < km/n; i++) {
 	int t = rg.nextInt(m);
