@@ -66,7 +66,7 @@ public class largeSample_v2 extends Configured implements Tool {
 	context.write(TARGET, value);
 	rem = rem - n;
 	}
-	if (reg.nextFloat() > (float)rem/n) return;
+	if (rg.nextFloat() > (float)rem/n) return;
 	int t = rg.nextInt(m);
 	int sec = rg.nextInt();
 	  TARGET.set(t, sec);
