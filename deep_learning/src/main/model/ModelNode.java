@@ -1,3 +1,4 @@
+package model;
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -37,32 +38,36 @@ import edu.umd.cloud9.io.array.ArrayListOfIntsWritable;
  */
 public class ModelNode implements Writable {
 
-	private ArrayListOfFloatsWritable[] weights = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
-  private ArrayListOfFloatsWritable[] bv = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
-	private ArrayListOfFloatsWritable[] bh = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
-	
+//	private ArrayListOfFloatsWritable[] weights = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
+//  private ArrayListOfFloatsWritable[] bv = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
+//	private ArrayListOfFloatsWritable[] bh = new ArrayListOfFloatsWritable[GlobalUtil.NUM_LAYER+1];
+  private float[][] sample_mem = new float[GlobalUtil.NUM_LAYER+1][]; //space storing the MCMC samples
+  private float[][] weights = new float[GlobalUtil.NUM_LAYER+1][]; //space storing the updating weights (first is not used)
+  private float[][] bh = new float[GlobalUtil.NUM_LAYER+1][]; // hidden layer biases (rbm)
+  private float[][] bv = new float[GlobalUtil.NUM_LAYER+1][]; // visible layer biases (rbm)
+
 	public ModelNode() {
 	}
 
-	public ArrayListOfFloatsWritable[] getWeight() {
+	public float[][] getWeight() {
 		return weights;
 	}
 
-  public ArrayListOfFloatsWritable[] getBH() {
+  public float[][] getBH() {
     return bh;
   }
 
-  public ArrayListOfFloatsWritable[] getBV() {
+  public float[][] getBV() {
     return bv;
   }
 
-	public void setWeight(ArrayListOfFloatsWritable[] weight) {
+	public void setWeight(float[][] weight) {
 		this.weights = weight;
 	}
-  public void setBH(ArrayListOfFloatsWritable[] bh) {
+  public void setBH(float[][] bh) {
     this.bh = bh;
   }
-  public void setBV(ArrayListOfFloatsWritable[] bv) {
+  public void setBV(float[][] bv) {
     this.bv = bv;
   }
 
@@ -75,19 +80,28 @@ public class ModelNode implements Writable {
 	 */
 	@Override
 	public void readFields(DataInput in) throws IOException {
-	  for (int i=1; i<GlobalUtil.NUM_LAYER+1;i++) {
-	    weights[i] = new ArrayListOfFloatsWritable();
-	    weights[i].readFields(in);
-	  }
+    sample_mem[0] = new float[GlobalUtil.NODES_INPUT];
+    for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+      weights[k] = new float[GlobalUtil.nodes_layer[k] * GlobalUtil.nodes_layer[k-1]];
+      sample_mem[k] = new float[GlobalUtil.nodes_layer[k]];
+      bh[k] = new float[GlobalUtil.nodes_layer[k]];
+      bv[k] = new float[GlobalUtil.nodes_layer[k-1]];
+    }
 
-    for (int i=1; i<GlobalUtil.NUM_LAYER+1;i++) {
-      bv[i] = new ArrayListOfFloatsWritable();
-      bv[i].readFields(in);
+
+	  for (int k=1; k<GlobalUtil.NUM_LAYER+1;k++) {
+      for (int i = 0; i < GlobalUtil.nodes_layer[k-1] * GlobalUtil.nodes_layer[k]; i++)
+          weights[k][i]=in.readInt();
+	  }
+	
+    for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+      for (int i = 0; i< GlobalUtil.nodes_layer[k]; i++) 
+          bh[k][i] = in.readFloat();
     }
     
-    for (int i=1; i<GlobalUtil.NUM_LAYER+1;i++) {
-      bh[i] = new ArrayListOfFloatsWritable();
-      bh[i].readFields(in);    
+    for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+      for (int i = 0; i< GlobalUtil.nodes_layer[k-1]; i++) 
+          bv[k][i] = in.readFloat();
     }
 	}
 
@@ -98,20 +112,42 @@ public class ModelNode implements Writable {
 	 */
 	@Override
 	public void write(DataOutput out) throws IOException {
-    for (int i=1; i<GlobalUtil.NUM_LAYER+1;i++) 
-      weights[i].write(out);
-		
-    for (int i=1; i<GlobalUtil.NUM_LAYER+1;i++) 
-      bv[i].write(out);
-		  
-    for (int i=1; i<GlobalUtil.NUM_LAYER+1;i++) 
-      bh[i].write(out);
+    for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+      for (int i = 0; i < GlobalUtil.nodes_layer[k] * GlobalUtil.nodes_layer[k-1]; i++)
+        out.writeFloat(weights[k][i]);
+    }
+    
+    for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+      for (int i = 0; i< GlobalUtil.nodes_layer[k]; i++) 
+          out.writeFloat(bh[k][i]);
+    }
+    
+    for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+      for (int i = 0; i< GlobalUtil.nodes_layer[k-1]; i++) 
+          out.writeFloat(bv[k][i]);
+    }
 	}
 
 	@Override
 	public String toString() {
-		return String.format("{%s %s %s}",
-				weights.toString(), bv.toString(), bh.toString());
+		String output = "";
+		for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+			output = output + "weights[" + k + "]:\n";
+			for (int j = 0; j < GlobalUtil.nodes_layer[k]; j++) {
+				for (int i = 0; i < GlobalUtil.nodes_layer[k-1]; i++) {
+					output = output + weights[k][GlobalUtil.nodes_layer[k-1]*j + i] + " ";
+				}
+				output = output + "\n";
+			}
+		}
+		for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
+			output = output + "bias[" + k + "]:\n";
+			for (int j = 0; j < GlobalUtil.nodes_layer[k]; j++) {
+				output = output + bh[k][j] + " ";
+			}
+			output = output + "\n";
+		}
+		return output;
 	}
 
 
@@ -153,4 +189,40 @@ public class ModelNode implements Writable {
   public static ModelNode create(byte[] bytes) throws IOException {
     return create(new DataInputStream(new ByteArrayInputStream(bytes)));
   }
+  
+  public float[] sim(float[] data) {
+  	float[] res = new float[GlobalUtil.nodes_layer[1]];
+  	float[] res_prev;
+  	res_prev = data;
+  	int n, m;
+  	for (int i = 1; i <= GlobalUtil.NUM_LAYER; i++) {
+  		res = new float[GlobalUtil.nodes_layer[i]];
+  		n = GlobalUtil.nodes_layer[i];
+  		m = GlobalUtil.nodes_layer[i-1];
+  		GlobalUtil.sigm(res, bh[i], weights[i], res_prev, n, m, true);
+  		res_prev = res;
+  	}
+  	return res;
+  }
+  
+  public float[] test(float[] test_records){
+    for (int j = 0; j < GlobalUtil.NODES_INPUT; j++)
+      sample_mem[0][j] = (float) test_records[j];
+
+    for (int k = 1; k < GlobalUtil.NUM_LAYER; k++)
+      GlobalUtil.sigm(sample_mem[k], bh[k], weights[k], sample_mem[k-1],
+          GlobalUtil.nodes_layer[k], GlobalUtil.nodes_layer[k-1], true);
+    
+    for (int j = 0; j < GlobalUtil.nodes_layer[GlobalUtil.NUM_LAYER]; j++) {
+      sample_mem[GlobalUtil.NUM_LAYER][j] = -bh[GlobalUtil.NUM_LAYER][j];
+      for (int i = 0; i < GlobalUtil.nodes_layer[GlobalUtil.NUM_LAYER-1]; i++)
+        sample_mem[GlobalUtil.NUM_LAYER][j] = sample_mem[GlobalUtil.NUM_LAYER][j]
+                                   - weights[GlobalUtil.NUM_LAYER][j*GlobalUtil.nodes_layer[GlobalUtil.NUM_LAYER-1] + i] * sample_mem[GlobalUtil.NUM_LAYER-1][i];
+    }
+    float[] result = new float[GlobalUtil.nodes_layer[GlobalUtil.NUM_LAYER]];
+    for (int j = 0; j < GlobalUtil.nodes_layer[GlobalUtil.NUM_LAYER]; j++)
+      result[j] = sample_mem[GlobalUtil.NUM_LAYER][j];
+    return result;
+  }
+  
 }
