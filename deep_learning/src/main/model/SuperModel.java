@@ -37,6 +37,25 @@ public class SuperModel implements Writable {
 	private float mu = GlobalUtil.mu, reg = GlobalUtil.reg;
 
 	public SuperModel() {
+		models = new ArrayList<ModelNode> ();
+		nModel = 0;
+		nEach = GlobalUtil.nodes_layer[GlobalUtil.NUM_LAYER];
+		NODES_INPUT = nModel * nEach;
+		nodes_layer = GlobalUtil.super_layer;
+		nodes_layer[0] = NODES_INPUT;
+		sample_mem[0] = new float[NODES_INPUT];
+		for (int k = 1; k <= NUM_LAYER; k++) {
+			weights[k] = new float[nodes_layer[k] * nodes_layer[k-1]];
+			for (int i = 0; i < nodes_layer[k] * nodes_layer[k-1]; i++)
+				weights[k][i] = 0.1f * (float)rd.nextGaussian();
+			sample_mem[k] = new float[nodes_layer[k]];
+			bh[k] = new float[nodes_layer[k]];
+			for (int i = 0; i < nodes_layer[k]; i++)
+				bh[k][i] = 0.0f;
+			bv[k] = new float[nodes_layer[k-1]];
+			for (int i = 0; i < nodes_layer[k-1]; i++)
+				bv[k][i] = 0.0f;
+		}
   }
 	public SuperModel(ArrayList<ModelNode> m) {
 		models = m;
@@ -52,7 +71,11 @@ public class SuperModel implements Writable {
 				weights[k][i] = 0.1f * (float)rd.nextGaussian();
 			sample_mem[k] = new float[nodes_layer[k]];
 			bh[k] = new float[nodes_layer[k]];
+			for (int i = 0; i < nodes_layer[k]; i++)
+				bh[k][i] = 0.0f;
 			bv[k] = new float[nodes_layer[k-1]];
+			for (int i = 0; i < nodes_layer[k-1]; i++)
+				bv[k][i] = 0.0f;
 		}
 
 	}
@@ -129,7 +152,10 @@ public class SuperModel implements Writable {
 	  out.writeInt(nModel);
 	  out.writeInt(nEach);
 	  out.writeInt(NODES_INPUT);
-	     
+	 
+    nodes_layer = GlobalUtil.super_layer;
+    nodes_layer[0] = NODES_INPUT;
+    
     for (int k = 1; k <= NUM_LAYER; k++) {
       for (int i = 0; i < nodes_layer[k] * nodes_layer[k-1]; i++)
         out.writeFloat(weights[k][i]);
@@ -290,7 +316,7 @@ public class SuperModel implements Writable {
   public float[] test(float[] test_records){
     float[] tmp;
     for (int i=0;i<nModel;i++) {
-      tmp = models.get(i).test(test_records);
+      tmp = models.get(i).sim(test_records);
       for (int j=0; j<nEach; j++)
         sample_mem[0][i*nEach+j] = tmp[j];
     }

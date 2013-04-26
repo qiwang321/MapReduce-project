@@ -89,9 +89,9 @@ public class ModelNode implements Writable {
     }
 
 
-	  for (int k=1; k<GlobalUtil.NUM_LAYER+1;k++) {
+	  for (int k=1; k<=GlobalUtil.NUM_LAYER;k++) {
       for (int i = 0; i < GlobalUtil.nodes_layer[k-1] * GlobalUtil.nodes_layer[k]; i++)
-          weights[k][i]=in.readInt();
+          weights[k][i]=in.readFloat();
 	  }
 	
     for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {

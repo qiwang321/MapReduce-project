@@ -133,7 +133,7 @@ public class AutoCoder extends Configured implements Tool {
 
 			for (int k = 1; k < GlobalUtil.NUM_LAYER + 1; k++) 
 				for (int j = 0; j < GlobalUtil.nodes_layer[k-1] * GlobalUtil.nodes_layer[k]; j++)
-					weights[k][j] = (float) (0.1 * rd.nextGaussian());
+					weights[k][j] = 0.1f * (float)rd.nextGaussian();
 
 
 			for (int k = 1; k < GlobalUtil.NUM_LAYER + 1; k++) 
@@ -155,13 +155,14 @@ public class AutoCoder extends Configured implements Tool {
 		public void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 			String line = value.toString();
+			if (line.length() == 0) return;
 			StringTokenizer itr = new StringTokenizer(line);
 			float[] data=new float[NODES_INPUT];
 
 			int tot=0;
 			while (itr.hasMoreTokens()){
 				String curr = itr.nextToken();
-				data[tot] = Float.parseFloat(curr);
+				data[tot] = Float.parseFloat(curr) / 255.0f;
 				tot++;
 			}
 
@@ -209,7 +210,8 @@ public class AutoCoder extends Configured implements Tool {
 			for (int i = 0; i < nodes_layer[layer_ind - 1]; i++)
 				x0[i] = sample_mem[layer_ind - 1][i];
 
-			if (layer_ind != NUM_LAYER) { // normal layer        
+			//if (layer_ind != NUM_LAYER) 
+			{ // normal layer        
 
 				//perform real computation
 				GlobalUtil.sigm(h0, bh[layer_ind], weights[layer_ind], x0,
@@ -218,12 +220,12 @@ public class AutoCoder extends Configured implements Tool {
 				for (int j = 0; j < nodes_layer[layer_ind]; j++)
 					sample_mem[layer_ind][j] = h0[j];
 
-				for (int i = 0; i < nodes_layer[layer_ind]; i++) {
+/*				for (int i = 0; i < nodes_layer[layer_ind]; i++) {
 					if (rd.nextFloat() < h0[i])
-						h0[i] = 1;
+						h0[i] = 1.0f;
 					else
-						h0[i] = 0;
-				}
+						h0[i] = 0.0f;
+				}*/
 
 
 				GlobalUtil.sigm(x1, bv[layer_ind], weights[layer_ind], h0,
@@ -252,7 +254,7 @@ public class AutoCoder extends Configured implements Tool {
 				}
 				// print the layer input data (just for testing)
 			}
-			else { // top layer
+			/*else { // top layer
 				//perform real computation
 				for (int j = 0; j < nodes_layer[NUM_LAYER]; j++) {
 					h0[j] = bh[NUM_LAYER][j];
@@ -292,7 +294,7 @@ public class AutoCoder extends Configured implements Tool {
 					bv[NUM_LAYER][i] = bv[NUM_LAYER][i] + inc_bv[i];
 				}
 				// print the layer input data (just for testing)
-			}
+			}*/
 		}
 	}
 
@@ -325,12 +327,6 @@ public class AutoCoder extends Configured implements Tool {
 			// load the information of k clusters 
 			layer_ind = context.getConfiguration().getInt("layer_ind", 0);
 
-			// Initialize the  memory for weight parameters
-			for (int k = 1; k <= GlobalUtil.NUM_LAYER; k++) {
-				weights[k] = new float[GlobalUtil.nodes_layer[k-1] * GlobalUtil.nodes_layer[k]];
-				bv[k] = new float[GlobalUtil.nodes_layer[k-1]];
-				bh[k] = new float[GlobalUtil.nodes_layer[k]];
-			}
 			count = 0;
 			dataPath = context.getConfiguration().get("dataPath");
 		}
@@ -354,17 +350,7 @@ public class AutoCoder extends Configured implements Tool {
 				//combine(model,now);
 				modelSet.add(now);
 			}
-			SuperModel consensus = new SuperModel(modelSet);
 
-			// train
-			Path inputPath = new Path(dataPath);
-			Configuration conf = context.getConfiguration();
-			FileSystem fs = FileSystem.get(conf);
-			//FSDataInputStream din = new FSDataInputStream(fs.open(inputPath));
-			BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(inputPath)));
-			consensus.train(in);
-
-			context.write(NullWritable.get(), consensus);
 		}
 
 		/*
@@ -375,6 +361,28 @@ public class AutoCoder extends Configured implements Tool {
 			count++;
 		}
 		 */
+		@Override
+		public void cleanup(Context context) {
+			SuperModel consensus = new SuperModel(modelSet);
+
+			// train
+			Path inputPath = new Path(dataPath);
+			Configuration conf = context.getConfiguration();
+			FileSystem fs;
+			try {
+				fs = FileSystem.get(conf);
+				//FSDataInputStream din = new FSDataInputStream(fs.open(inputPath));
+				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(inputPath)));
+				consensus.train(in);
+				context.write(NullWritable.get(), consensus);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
 	}
 
@@ -423,20 +431,20 @@ public class AutoCoder extends Configured implements Tool {
 			return -1;
 		}
 
-		if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
+		/*if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
 			System.out.println("args: " + Arrays.toString(args));
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.setWidth(120);
 			formatter.printHelp(this.getClass().getName(), options);
 			ToolRunner.printGenericCommandUsage(System.out);
 			return -1;
-		}
+		}*/
 
 		//String inputPath = cmdline.getOptionValue(INPUT);
 		//String outputPath = cmdline.getOptionValue(OUTPUT);
-		String inputPath = "mingled_v2/*";
+		String inputPath = "mingled_v2/part*";
 		String outputPath = "output";
-		String dataPath = "mingled_v2/part-r-00000";
+		String dataPath = "mingled_v2/common";
 		int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
 				Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
@@ -461,9 +469,10 @@ public class AutoCoder extends Configured implements Tool {
 
 				FileInputFormat.setInputPaths(job, new Path(inputPath));
 				FileOutputFormat.setOutputPath(job, new Path(outputPath));
+				//FileInputFormat.setMaxInputSplitSize(job, 1024*1024);
 				
 				job.setInputFormatClass(TextInputFormat.class);
-				job.setOutputFormatClass(TextOutputFormat.class);
+				job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 				job.setMapOutputKeyClass(IntWritable.class);
 				job.setMapOutputValueClass(ModelNode.class);

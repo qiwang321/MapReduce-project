@@ -5,8 +5,10 @@ package model;
 
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -27,6 +29,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -52,7 +55,7 @@ public class TestModule{
     SequenceFile.Reader reader = null;
     try {
         reader = new SequenceFile.Reader(fs, new Path(path), conf);
-        Text key = new Text();
+        NullWritable key = NullWritable.get();
             ReflectionUtils.newInstance(reader.getKeyClass(), conf);
         SuperModel value = new SuperModel();
             ReflectionUtils.newInstance(reader.getValueClass(), conf);
@@ -70,30 +73,44 @@ public class TestModule{
     }
   }
   
-  public float[] test(float[] test_records){
+  public static float[] test(float[] test_records){
     return sm.test(test_records);
   }
   
   
-  public void test(Configuration conf, String path) throws IOException{
-    FSDataInputStream testfile=FileSystem.get(conf).open(new Path(path));
+  public static void test(Configuration conf, String inputPath, String outputPath) throws IOException{
+    FSDataInputStream testfile=FileSystem.get(conf).open(new Path(inputPath));
     BufferedReader reader = new BufferedReader(new InputStreamReader(testfile));
+    FSDataOutputStream testoutput=FileSystem.get(conf).create(new Path(outputPath));
+    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(testoutput));
     float[] test_records = new float[GlobalUtil.NODES_INPUT];
     float[] result;
     while (reader.ready()){
+   // for(int k=0; k < 100;k++) {
       String line = reader.readLine();
+      if (line.length() == 0)
+      	continue;
       String[] items = line.trim().split("\\s+");
       for (int i=0;i<GlobalUtil.NODES_INPUT;i++) 
-          test_records[i]=Float.parseFloat(items[i]);
+          test_records[i]=Float.parseFloat(items[i]) / 255.0f;
       result = test(test_records);
       
+      for (int j = 0; j < result.length; j++)
+      	writer.write(result[j] + " ");
+      writer.write("\n");
+      
     }
+    writer.close();
+    reader.close();
   }
   
   
   public static void main(String[] args) throws IOException{
-      initial("SuperModel");
-      
+      initial("output/part-r-00000");
+      for (int i = 0; i < 10; i++) {
+      	test(new Configuration(), "data/test" + i, "test-out/class" + i);
+      	System.out.println("tested set " + i);
+      }
   }
 
 }
