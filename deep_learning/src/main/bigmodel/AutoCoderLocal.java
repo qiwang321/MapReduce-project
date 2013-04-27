@@ -1,4 +1,4 @@
-package bigmodel;
+//package bigmodel;
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -106,9 +106,9 @@ public class AutoCoderLocal extends Configured implements Tool {
 
 		private static int layer_ind=0;
 		
-		float[][] inc_w = new float[NUM_LAYER][]; // previous increase of weights
-		float[][] inc_bv = new float[NUM_LAYER][];
-		float[][] inc_bh = new float[NUM_LAYER][];
+		float[][] inc_w = new float[NUM_LAYER+1][]; // previous increase of weights
+		float[][] inc_bv = new float[NUM_LAYER+1][];
+		float[][] inc_bh = new float[NUM_LAYER+][];
 
 
 		private static float read_float(BufferedReader reader) throws NumberFormatException, IOException{
