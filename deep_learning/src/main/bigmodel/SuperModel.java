@@ -37,6 +37,10 @@ public class SuperModel implements Writable {
 	private float yita_w = GlobalUtil.yita_w, yita_bv = GlobalUtil.yita_bv, yita_bh = GlobalUtil.yita_bh,
 			yita_wt = GlobalUtil.yita_wt, yita_bvt = GlobalUtil.yita_bvt, yita_bht = GlobalUtil.yita_bht; // learning rates
 	private float mu = GlobalUtil.mu, reg = GlobalUtil.reg;
+	
+	float[][] inc_w = new float[NUM_LAYER+1][]; // previous increase of weights
+	float[][] inc_bv = new float[NUM_LAYER+1][];
+	float[][] inc_bh = new float[NUM_LAYER+1][];
 
 	public SuperModel(){
 		models = new ArrayList<ModelNode>();
@@ -49,12 +53,16 @@ public class SuperModel implements Writable {
 		for (int k = 1; k <= NUM_LAYER; k++) {
 			weights[k] = new float[nodes_layer[k] * nodes_layer[k-1]];
 			for (int i = 0; i < nodes_layer[k] * nodes_layer[k-1]; i++)
-				weights[k][i] = 0.1f * (float)rd.nextGaussian();
+				weights[k][i] = 0.01f * (float)rd.nextGaussian();
 			sample_mem[k] = new float[nodes_layer[k]];
 			bh[k] = new float[nodes_layer[k]];
 			bv[k] = new float[nodes_layer[k-1]];
+			
+			inc_w[k] = new float[nodes_layer[k-1]*nodes_layer[k]]; // previous increase of weights
+			inc_bv[k] = new float[nodes_layer[k-1]];
+			inc_bh[k] = new float[nodes_layer[k]];
 		}
-
+		
 	}
 	public SuperModel(ArrayList<ModelNode> m) {
 		models = m;
@@ -67,15 +75,28 @@ public class SuperModel implements Writable {
 		for (int k = 1; k <= NUM_LAYER; k++) {
 			weights[k] = new float[nodes_layer[k] * nodes_layer[k-1]];
 			for (int i = 0; i < nodes_layer[k] * nodes_layer[k-1]; i++)
-				weights[k][i] = 0.1f * (float)rd.nextGaussian();
+				weights[k][i] = 0.01f * (float)rd.nextGaussian();
 			sample_mem[k] = new float[nodes_layer[k]];
 			bh[k] = new float[nodes_layer[k]];
 			bv[k] = new float[nodes_layer[k-1]];
+			
+			inc_w[k] = new float[nodes_layer[k-1]*nodes_layer[k]]; // previous increase of weights
+			inc_bv[k] = new float[nodes_layer[k-1]];
+			inc_bh[k] = new float[nodes_layer[k]];
 		}
+		
+
 
 	}
 
 	public void train(BufferedReader in) throws IOException {
+
+		for (int k = 1; k <= NUM_LAYER; k++) {
+			Arrays.fill(inc_w[k], 0);
+			Arrays.fill(inc_bv[k], 0);
+			Arrays.fill(inc_bh[k], 0);
+		}
+		
 		// readin the data
 		float[] data = new float[GlobalUtil.sizeInput]; // place to hold float data
 		String line = in.readLine();
@@ -212,12 +233,7 @@ public class SuperModel implements Writable {
 		float[] h0 = new float[nodes_layer[layer_ind]];  // hidden
 		float[] x1 = new float[nodes_layer[layer_ind - 1]];
 		float[] h1 = new float[nodes_layer[layer_ind]];
-		float[] inc_w = new float[nodes_layer[layer_ind-1]*nodes_layer[layer_ind]]; // previous increase of weights
-		float[] inc_bv = new float[nodes_layer[layer_ind-1]];
-		float[] inc_bh = new float[nodes_layer[layer_ind]];
-		Arrays.fill(inc_w,0);
-		Arrays.fill(inc_bv, 0);
-		Arrays.fill(inc_bh, 0);
+
 
 		for (int i = 0; i < nodes_layer[layer_ind - 1]; i++)
 			x0[i] = sample_mem[layer_ind - 1][i];
@@ -247,21 +263,21 @@ public class SuperModel implements Writable {
 
 			for (int j = 0; j < nodes_layer[layer_ind]; j++)
 				for (int i = 0; i < nodes_layer[layer_ind-1]; i++) {
-					inc_w[j*nodes_layer[layer_ind-1] + i] = mu * inc_w[j*nodes_layer[layer_ind-1] + i]
+					inc_w[layer_ind][j*nodes_layer[layer_ind-1] + i] = mu * inc_w[layer_ind][j*nodes_layer[layer_ind-1] + i]
 							+ yita_w * (h0[j]*x0[i] - h1[j]*x1[i] - reg * weights[layer_ind][j*nodes_layer[layer_ind-1] + i]);
 					weights[layer_ind][j*nodes_layer[layer_ind-1] + i] =
 							weights[layer_ind][j*nodes_layer[layer_ind-1] + i]
-									+inc_w[j*nodes_layer[layer_ind-1] + i];
+									+inc_w[layer_ind][j*nodes_layer[layer_ind-1] + i];
 				}
 
 			for (int j = 0; j < nodes_layer[layer_ind]; j++) {
-				inc_bh[j] = mu * inc_bh[j] + yita_bh*(h0[j] - h1[j] - reg * bh[layer_ind][j]);
-				bh[layer_ind][j] = bh[layer_ind][j] + inc_bh[j];
+				inc_bh[layer_ind][j] = mu * inc_bh[layer_ind][j] + yita_bh*(h0[j] - h1[j] - reg * bh[layer_ind][j]);
+				bh[layer_ind][j] = bh[layer_ind][j] + inc_bh[layer_ind][j];
 			}
 
 			for (int i = 0; i < nodes_layer[layer_ind-1]; i++) {
-				inc_bv[i] = mu * inc_bv[i] + yita_bv*(x0[i] - x1[i] - reg * bv[layer_ind][i]);
-				bv[layer_ind][i] = bv[layer_ind][i] + inc_bv[i];
+				inc_bv[layer_ind][i] = mu * inc_bv[layer_ind][i] + yita_bv*(x0[i] - x1[i] - reg * bv[layer_ind][i]);
+				bv[layer_ind][i] = bv[layer_ind][i] + inc_bv[layer_ind][i];
 			}
 			// print the layer input data (just for testing)
 		}
@@ -288,21 +304,21 @@ public class SuperModel implements Writable {
 
 			for (int j = 0; j < nodes_layer[layer_ind]; j++)
 				for (int i = 0; i < nodes_layer[layer_ind-1]; i++) {
-					inc_w[j*nodes_layer[layer_ind-1] + i] = mu * inc_w[j*nodes_layer[layer_ind-1] + i]
+					inc_w[layer_ind][j*nodes_layer[layer_ind-1] + i] = mu * inc_w[layer_ind][j*nodes_layer[layer_ind-1] + i]
 							+ yita_wt * (h0[j]*x0[i] - h1[j]*x1[i] - reg * weights[layer_ind][j*nodes_layer[layer_ind-1] + i]);
 					weights[layer_ind][j*nodes_layer[layer_ind-1] + i] =
 							weights[layer_ind][j*nodes_layer[layer_ind-1] + i]
-									+inc_w[j*nodes_layer[layer_ind-1] + i];
+									+inc_w[layer_ind][j*nodes_layer[layer_ind-1] + i];
 				}
 
 			for (int j = 0; j < nodes_layer[layer_ind]; j++) {
-				inc_bh[j] = mu * inc_bh[j] + yita_bht*(h0[j] - h1[j] - reg * bh[layer_ind][j]);
-				bh[layer_ind][j] = bh[layer_ind][j] + inc_bh[j];
+				inc_bh[layer_ind][j] = mu * inc_bh[layer_ind][j] + yita_bht*(h0[j] - h1[j] - reg * bh[layer_ind][j]);
+				bh[layer_ind][j] = bh[layer_ind][j] + inc_bh[layer_ind][j];
 			}
 
 			for (int i = 0; i < nodes_layer[layer_ind-1]; i++) {
-				inc_bv[i] = mu * inc_bv[i] + yita_bvt*(x0[i] - x1[i] - reg * bv[layer_ind][i]);
-				bv[layer_ind][i] = bv[layer_ind][i] + inc_bv[i];
+				inc_bv[layer_ind][i] = mu * inc_bv[layer_ind][i] + yita_bvt*(x0[i] - x1[i] - reg * bv[layer_ind][i]);
+				bv[layer_ind][i] = bv[layer_ind][i] + inc_bv[layer_ind][i];
 			}
 			// print the layer input data (just for testing)
 		}
@@ -322,10 +338,10 @@ public class SuperModel implements Writable {
 					nodes_layer[k], nodes_layer[k-1], true);
 
 		for (int j = 0; j < nodes_layer[NUM_LAYER]; j++) {
-			sample_mem[NUM_LAYER][j] = -bh[NUM_LAYER][j];
+			sample_mem[NUM_LAYER][j] = bh[NUM_LAYER][j];
 			for (int i = 0; i < nodes_layer[NUM_LAYER-1]; i++)
 				sample_mem[NUM_LAYER][j] = sample_mem[NUM_LAYER][j]
-						- weights[NUM_LAYER][j*nodes_layer[NUM_LAYER-1] + i] * sample_mem[NUM_LAYER-1][i];
+						+ weights[NUM_LAYER][j*nodes_layer[NUM_LAYER-1] + i] * sample_mem[NUM_LAYER-1][i];
 		}
 		float[] result = new float[nodes_layer[NUM_LAYER]];
 		for (int j = 0; j < nodes_layer[NUM_LAYER]; j++)
