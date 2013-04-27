@@ -108,7 +108,7 @@ public class AutoCoderLocal extends Configured implements Tool {
 		
 		float[][] inc_w = new float[NUM_LAYER+1][]; // previous increase of weights
 		float[][] inc_bv = new float[NUM_LAYER+1][];
-		float[][] inc_bh = new float[NUM_LAYER+][];
+		float[][] inc_bh = new float[NUM_LAYER+1][];
 
 
 		private static float read_float(BufferedReader reader) throws NumberFormatException, IOException{
