@@ -1,4 +1,4 @@
-package bigmodel;
+package model;
 
 
 
@@ -106,12 +106,15 @@ public class TestModule{
   
   
   public static void main(String[] args) throws IOException{
-      initial("output/part-r-00000");
-      for (int i = 1; i <= 10; i++) {
-      	test(new Configuration(), "/home/qiwang321/mapreduce-data/data/part1-10/part" + i, 
-      			"test-out/class" + i);
-      	System.out.println("tested set " + i);
-      }
+  	String modelPath = args[0];
+    initial(modelPath + "/part-r-00000");
+    String dataPath = args[1];
+    String outputPath = args[2];
+    for (int i = 1; i <= 5; i++) {
+    	test(new Configuration(), dataPath + "/part" + i, 
+    			outputPath + "/class" + i);
+    	System.out.println("tested set " + i);
+    }
   }
 
 }
