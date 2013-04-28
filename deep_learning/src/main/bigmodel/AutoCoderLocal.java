@@ -570,7 +570,7 @@ public class AutoCoderLocal extends Configured implements Tool {
 			return -1;
 		}
 
-		String inputPath = cmdline.getOptionValue(INPUT) + "/part*";
+		String inputPath = cmdline.getOptionValue(INPUT) + "/part-r-00000";
 		String outputPath = cmdline.getOptionValue(OUTPUT);
 		String dataPath = cmdline.getOptionValue(INPUT) + "/common";
 		//String inputPath = "/home/qiwang321/mapreduce-data/data/in-mingled1-5/part*";
@@ -600,8 +600,8 @@ public class AutoCoderLocal extends Configured implements Tool {
 
 				FileInputFormat.setInputPaths(job, new Path(inputPath));
 				FileOutputFormat.setOutputPath(job, new Path(outputPath));
-				FileInputFormat.setMinInputSplitSize(job, 1000*1024*1024);
-				FileInputFormat.setMaxInputSplitSize(job, 1000*1024*1024);
+				FileInputFormat.setMinInputSplitSize(job, 100*1024*1024);
+				FileInputFormat.setMaxInputSplitSize(job, 100*1024*1024);
 				
 				job.setInputFormatClass(TextInputFormat.class);
 				job.setOutputFormatClass(SequenceFileOutputFormat.class);

@@ -17,9 +17,9 @@ public class GlobalUtil{
 
     
 
-    public static final float yita_w = (float) 0.05, yita_bv = (float) 0.05, yita_bh = (float) 0.05,
+    public static final float yita_w = (float) 0.1, yita_bv = (float) 0.1, yita_bh = (float) 0.1,
     yita_wt = (float) 5e-4, yita_bvt = (float) 5e-4, yita_bht = (float) 5e-4; // learning rates
-    public static final float mu = (float) 0.5, reg = (float) 0.0000;
+    public static final float mu = (float) 0.5, reg = (float) 0.0002;
     
     public static final int window = 4;
     public static final int step = 4;
