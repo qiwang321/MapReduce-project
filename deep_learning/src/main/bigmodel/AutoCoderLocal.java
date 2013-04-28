@@ -504,12 +504,15 @@ public class AutoCoderLocal extends Configured implements Tool {
 				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(inputPath)));
 				consensus.train(in);
 				context.write(NullWritable.get(), consensus);
+				System.out.println("writing successful!!!");
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				System.out.println("Reduce write error1 !!!!!!!!!!!!!!!!");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				System.out.println("Reduce write error2 !!!!!!!!!!!!!!!!!!!");
 			}
 		}		
 
@@ -570,7 +573,7 @@ public class AutoCoderLocal extends Configured implements Tool {
 			return -1;
 		}
 
-		String inputPath = cmdline.getOptionValue(INPUT) + "/part*";
+		String inputPath = cmdline.getOptionValue(INPUT) + "/part-r-00000";
 		String outputPath = cmdline.getOptionValue(OUTPUT);
 		String dataPath = cmdline.getOptionValue(INPUT) + "/common";
 		//String inputPath = "/home/qiwang321/mapreduce-data/data/in-mingled1-5/part*";
