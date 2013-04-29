@@ -467,6 +467,11 @@ public class AutoCoder extends Configured implements Tool {
 
 				conf.set("dataPath", dataPath);
 
+				conf.set("mapreduce.map.memory.mb", "2048");
+  				conf.set("mapreduce.map.java.opts", "-Xmx2048m");
+    				conf.set("mapreduce.reduce.memory.mb", "2048");
+    				conf.set("mapreduce.reduce.java.opts", "-Xmx2048m");
+
 				Job job = Job.getInstance(conf);
 				job.setJobName(AutoCoder.class.getSimpleName());
 				job.setJarByClass(AutoCoder.class);
@@ -481,11 +486,7 @@ public class AutoCoder extends Configured implements Tool {
 				FileOutputFormat.setOutputPath(job, new Path(outputPath));
 				FileInputFormat.setMaxInputSplitSize(job, 45*1024*1024);
 				FileInputFormat.setMinInputSplitSize(job, 45*1024*1024);
-					
-				conf.set("mapreduce.map.memory.mb", "2048");
-  				conf.set("mapreduce.map.java.opts", "-Xmx2048m");
-    				conf.set("mapreduce.reduce.memory.mb", "2048");
-    				conf.set("mapreduce.reduce.java.opts", "-Xmx2048m");				
+								
 
 				job.setInputFormatClass(TextInputFormat.class);
 				job.setOutputFormatClass(SequenceFileOutputFormat.class);
