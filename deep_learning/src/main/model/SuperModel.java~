@@ -1,4 +1,4 @@
-//package model;
+package model;
 import java.io.BufferedReader;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -109,7 +109,9 @@ public class SuperModel implements Writable {
 		// readin the data
 		float[] data = new float[GlobalUtil.NODES_INPUT]; // place to hold float data
 		String line = in.readLine();
-		while (line != null && line.length() > 0) {
+		int l = 0;
+		while (line != null && line.length() > 0 && l < 1000) {
+			l++;
 			String[] tmp = line.split("\\s+");
 			for (int i = 0; i < GlobalUtil.NODES_INPUT; i++) {
 				data[i] = Float.parseFloat(tmp[i]) / 255.0f;
