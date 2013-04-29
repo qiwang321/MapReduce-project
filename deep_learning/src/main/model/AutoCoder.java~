@@ -1,4 +1,4 @@
- //package model;
+package model;
 /*
  * Cloud9: A Hadoop toolkit for working with big data
  *
@@ -479,9 +479,14 @@ public class AutoCoder extends Configured implements Tool {
 
 				FileInputFormat.setInputPaths(job, new Path(inputPath));
 				FileOutputFormat.setOutputPath(job, new Path(outputPath));
-				FileInputFormat.setMaxInputSplitSize(job, 200*1024*1024);
-				FileInputFormat.setMinInputSplitSize(job, 200*1024*1024);
-				
+				FileInputFormat.setMaxInputSplitSize(job, 45*1024*1024);
+				FileInputFormat.setMinInputSplitSize(job, 45*1024*1024);
+					
+				conf.set("mapreduce.map.memory.mb", "2048");
+  				conf.set("mapreduce.map.java.opts", "-Xmx2048m");
+    				conf.set("mapreduce.reduce.memory.mb", "2048");
+    				conf.set("mapreduce.reduce.java.opts", "-Xmx2048m");				
+
 				job.setInputFormatClass(TextInputFormat.class);
 				job.setOutputFormatClass(SequenceFileOutputFormat.class);
 

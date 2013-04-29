@@ -5,7 +5,7 @@ import java.util.Random;
 public class GlobalUtil{
     public static final int ITERATIONS = 5;  
     public static int NUM_LAYER = 4;
-    public static int NODES_INPUT = 784*3;
+    public static int NODES_INPUT = 56*56*3;
     public static double TRAIN_TIME = 80.0;    
     public static final int[] train_len = {5923, 6742, 5958, 6131, 5842, 5421, 5918, 6265, 5851, 5949}; 
     public static final int[] test_len = {980, 1135, 1032, 1010, 982, 892, 958, 1028, 974, 1009};
