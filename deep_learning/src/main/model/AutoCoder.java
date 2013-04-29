@@ -484,8 +484,8 @@ public class AutoCoder extends Configured implements Tool {
 
 				FileInputFormat.setInputPaths(job, new Path(inputPath));
 				FileOutputFormat.setOutputPath(job, new Path(outputPath));
-				FileInputFormat.setMaxInputSplitSize(job, 45*1024*1024);
-				FileInputFormat.setMinInputSplitSize(job, 45*1024*1024);
+				FileInputFormat.setMaxInputSplitSize(job, 1000*1024*1024);
+				FileInputFormat.setMinInputSplitSize(job, 1000*1024*1024);
 								
 
 				job.setInputFormatClass(TextInputFormat.class);
