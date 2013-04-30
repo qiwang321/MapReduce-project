@@ -155,7 +155,7 @@ public class TestModule{
 		for (int i = 0; i < 5; i++) {
 			test(new Configuration(), dataPath + "/part" + ind[i] + "-56x56", 
 					outputPath + "/class" + i);
-			LOG.info("tested set " + i);
+			System.out.println("tested set " + i);
 		}
 	}
 }
